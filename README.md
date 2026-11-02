@@ -65,10 +65,20 @@ The "Profile Q&A" box answers with **fixed keyword rules** over the DATA block. 
 - Respects "reduce motion" system settings (no animations, static 3D background)
 - The Three.js 3D background loads after the content, is lighter on phones and low-power devices, pauses when the tab is hidden, and is skipped in data-saver mode. If it, the web fonts or the profile photo fail to load, the page still works and stays readable.
 
+## AWS hosting (in progress)
+
+`cloud/aws/` contains a CloudFormation template, a dry-run-by-default deploy script and a manual GitHub Actions workflow (`.github/workflows/deploy-aws.yml`) to host this same site on a private S3 bucket behind CloudFront (OAC, HTTPS, OIDC, least-privilege IAM). Nothing is deployed to AWS yet; GitHub Pages stays the live site. Start with [`cloud/aws/README.md`](cloud/aws/README.md).
+
+When the AWS version is live, update the AWS project card in `DATA.projects`: change `status` and `result`, and add the CloudFront URL.
+
 ## Files
 
 | File | Purpose |
 |---|---|
 | `index.html` | The whole site |
+| `404.html` | "Page not found" page (used by GitHub Pages and CloudFront) |
+| `.nojekyll` | Tells GitHub Pages to serve files as they are (no Jekyll build) |
 | `README.md` | This guide |
-| `cv.pdf` | (optional) Your CV for the Download CV button |
+| `cv.pdf` | (optional, add when approved) Your CV for the Download CV button |
+| `cloud/aws/` | AWS infrastructure, scripts and guides |
+| `.github/workflows/deploy-aws.yml` | Manual AWS deployment workflow |

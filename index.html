@@ -154,6 +154,15 @@ const DATA = {
       link: "https://github.com/NadavaluruSashank/sentinel-lite"
     },
     {
+      name: "AWS-Hosted Personal Portfolio — Secure Static Website Deployment", short: "AWS-Hosted Portfolio",
+      tag: "Cloud · DevOps", status: "AWS deployment — in progress",
+      keywords: ["aws", "cloud", "cloudfront", "s3", "oidc", "cloudformation", "ci/cd", "github actions"],
+      summary: "Infrastructure as code (CloudFormation) to host this portfolio on a private Amazon S3 bucket behind Amazon CloudFront with Origin Access Control and HTTPS only, deployed by a manual GitHub Actions workflow that signs in to AWS with short-lived OIDC credentials and a least-privilege IAM role.",
+      result: "Status: written and validated locally (cfn-lint, actionlint, shellcheck, checkov). Not yet deployed to AWS. GitHub Pages remains the live host.",
+      stack: ["S3", "CloudFront", "OAC", "IAM", "GitHub Actions", "OIDC", "CloudFormation", "HTTPS"],
+      link: "https://github.com/NadavaluruSashank/Portfolio_website/tree/main/cloud/aws", linkLabel: "View IaC"
+    },
+    {
       name: "Delivery Time Prediction", tag: "ML + API · Simulated data",
       summary: "XGBoost regressor that predicts delivery time from distance, traffic, weather, vehicle type and time of day, trained on 5,000 simulated orders and served through a Flask REST API.",
       result: "On simulated data (80/20 split): MAE 3.25 min, RMSE 4.08 min, R² 0.974. These are not results from a real business deployment.",
@@ -163,7 +172,7 @@ const DATA = {
     {
       name: "Smart Traffic Management", tag: "IoT analytics · Simulated data",
       summary: "Pipeline on simulated IoT sensor data (3,360 readings, 5 intersections): a Random Forest classifies congestion into four states, a rule-based engine suggests adaptive signal timing, and a Streamlit dashboard shows it per intersection.",
-      result: "99.7% accuracy on simulated data. The labels come from rules, so this is near-perfect by construction; the value is the pipeline, not the score.",
+      result: "Above 99% accuracy on simulated data. The labels come from rules, so this is near-perfect by construction; the value is the pipeline, not the score.",
       stack: ["scikit-learn", "pandas", "Streamlit"],
       link: "https://github.com/NadavaluruSashank/Smart-Traffic-Management"
     },
@@ -189,15 +198,16 @@ const DATA = {
   ],
 
   skills: {
-    "Languages & data": ["Python", "SQL", "pandas", "NumPy"],
-    "Machine learning": ["scikit-learn", "XGBoost", "Feature engineering", "Model evaluation", "Forecasting"],
-    "Data & BI": ["PostgreSQL", "Power BI", "Tableau", "Streamlit", "Excel"],
-    "Engineering": ["FastAPI", "Flask", "Docker", "Git", "Jupyter"],
+    "Programming & data": ["Python", "SQL", "pandas", "NumPy"],
+    "Machine learning": ["Machine learning", "scikit-learn", "XGBoost", "Predictive analytics", "Feature engineering", "Model evaluation"],
+    "Databases & BI": ["PostgreSQL", "Power BI", "Tableau", "Streamlit", "Excel"],
+    "APIs & engineering": ["FastAPI", "Flask", "REST APIs", "Docker", "Git"],
     "Cloud": ["AWS EC2", "AWS S3", "AWS RDS"],
-    "Learning now": ["LLMs & RAG", "LangChain", "MLflow", "Airflow", "dbt"]
+    "Learning now": ["CloudFront & CloudFormation", "GitHub Actions", "LLMs & RAG", "MLflow", "Airflow", "dbt"]
   },
 
-  spoken: ["English — Fluent", "Telugu — Native", "Tamil", "French — Beginner (A1)"]
+  // Add Tamil with its level once confirmed, e.g. "Tamil — Conversational".
+  spoken: ["English — Fluent", "Telugu — Native", "French — Beginner (A1)"]
 };
 </script>
 
@@ -404,8 +414,17 @@ h2 em{font-style:normal;color:var(--muted)}
 .contact .ctas{justify-content:center}
 .mailbig{display:inline-block;background:none;border:0;border-bottom:1px solid var(--line2);color:var(--text);margin-top:30px;font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-size:clamp(18px,3vw,28px);border-bottom:1px solid var(--line2);padding-bottom:4px;cursor:pointer;transition:.2s}
 .mailbig:hover{border-color:var(--teal)}
-footer{border-top:1px solid var(--line);padding:26px 0;font-size:13px;color:var(--muted)}
-footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+footer{border-top:1px solid var(--line);padding:40px 0 28px;font-size:14px;color:var(--muted);background:color-mix(in srgb,var(--bg) 80%,transparent)}
+.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:28px}
+.fgrid h3{font-size:15px;color:var(--text);margin-bottom:10px}
+.fgrid ul{list-style:none;display:grid;gap:6px}
+.fgrid a{text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.fgrid a:hover{color:var(--text);text-decoration-color:var(--teal)}
+.fbottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:28px;padding-top:18px;border-top:1px solid var(--line);font-size:13px}
+@media(max-width:720px){.fgrid{grid-template-columns:1fr}}
+.badge{display:inline-block;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;margin-bottom:8px;color:var(--pink);border:1px solid color-mix(in srgb,var(--pink) 45%,transparent)}
+.cdetails{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:10px 26px;margin-top:22px;font-size:15px;color:var(--muted)}
+.cdetails b{color:var(--text);font-weight:600}
 
 /* reveal */
 .reveal{opacity:0;transform:translateY(26px);filter:blur(6px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1),filter .8s}
@@ -536,11 +555,19 @@ noscript .ns a{text-decoration:underline}
     <div class="eyebrow" style="justify-content:center">06 — Contact</div>
     <h2 class="reveal" id="h-contact">Let's build <span class="grad">something.</span></h2>
     <p class="reveal" id="availText"></p>
+    <ul class="cdetails reveal" id="cdetails"></ul>
     <button type="button" class="mailbig reveal" id="mailbig" aria-label="Copy email address"></button>
     <div class="ctas reveal" id="contactCtas"></div>
   </section>
 </main>
-<footer><div class="wrap"><span id="foot"></span><span>Press <span class="mono">Ctrl/⌘ K</span> to navigate · Profile Q&amp;A answers from this page</span></div></footer>
+<footer aria-label="Site footer"><div class="wrap">
+  <div class="fgrid">
+    <div><h3 id="fname"></h3><p id="fsum"></p></div>
+    <div><h3>Contact</h3><ul id="fcontact"></ul></div>
+    <div><h3>On this page</h3><ul><li><a href="#experience">Experience</a></li><li><a href="#projects">Projects</a></li><li><a href="#skills">Skills</a></li><li><a href="#credentials">Education &amp; certifications</a></li></ul></div>
+  </div>
+  <div class="fbottom"><span id="foot"></span><span>Hosted on GitHub Pages · Press <span class="mono">Ctrl/⌘ K</span> to navigate · Profile Q&amp;A is rule-based, not an AI model</span></div>
+</div></footer>
 
 <!-- command palette -->
 <div class="overlay" id="kOverlay"><div class="palette" role="dialog" aria-modal="true" aria-label="Command menu">
@@ -636,8 +663,8 @@ function pipeSVG(steps){
 }
 const cmpHTML=c=>c?`<table class="cmp"><caption>Chronological holdout (newest 20% of orders). Lift = late rate in the top 5% ÷ test-period average.</caption><thead><tr><th scope="col">Model</th><th scope="col">ROC-AUC</th><th scope="col">Top-5% lift</th></tr></thead><tbody>${c.map(r=>`<tr><td>${esc(r.model)}</td><td>${esc(r.auc)}</td><td>${esc(r.lift)}</td></tr>`).join("")}</tbody></table>`:"";
 $("projs").innerHTML=D.projects.map((p,i)=>{
-  const body=`<div><div class="tag">${esc(p.tag)}</div><h3>${esc(p.name)}</h3><p>${esc(p.summary)}</p>${p.result?`<div class="res">${esc(p.result)}</div>`:""}${p.notes?`<ul class="notes">${p.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}${chips(p.stack)}
-  ${p.link?`<a class="go" href="${esc(p.link)}" target="_blank" rel="noopener" aria-label="View code for ${esc(p.name)} on GitHub (opens in a new tab)">View code <i aria-hidden="true">↗</i></a>`:""}</div>`;
+  const body=`<div><div class="tag">${esc(p.tag)}</div>${p.status?`<span class="badge">${esc(p.status)}</span>`:""}<h3>${esc(p.name)}</h3><p>${esc(p.summary)}</p>${p.result?`<div class="res">${esc(p.result)}</div>`:""}${p.notes?`<ul class="notes">${p.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}${chips(p.stack)}
+  ${p.link?`<a class="go" href="${esc(p.link)}" target="_blank" rel="noopener" aria-label="${esc(p.linkLabel||"View code")} for ${esc(p.short||p.name)} on GitHub (opens in a new tab)">${esc(p.linkLabel||"View code")} <i aria-hidden="true">↗</i></a>`:""}</div>`;
   if(i===0&&p.pipeline) return `<article class="card proj feat tilt reveal">${body}<div class="pipe"><div class="ttl"><span>pipeline</span><b>local prototype</b></div><div role="img" aria-label="Pipeline: ${esc(p.pipeline.join(", then "))}">${pipeSVG(p.pipeline)}</div>${cmpHTML(p.compare)}</div></article>`;
   return `<article class="card proj tilt reveal"><span class="num">0${i+1}</span>${body}</article>`;
 }).join("");
@@ -647,6 +674,11 @@ $("edu").innerHTML=D.education.map(e=>row("🎓",e.degree,`${e.school} · ${e.wh
 $("certs").innerHTML=D.certifications.map(c=>row("✦",c.name,c.issuer+(c.date?" · "+c.date:""),c.link?`<br><a class="verify" href="${esc(c.link)}" target="_blank" rel="noopener" aria-label="Verify ${esc(c.name)} (opens in a new tab)">Verify credential ↗</a>`:"")).join("");
 $("skillGrid").innerHTML=Object.entries(D.skills).map(([k,v])=>`<div class="card reveal"><h4>${esc(k)}</h4>${chips(v)}</div>`).join("");
 $("foot").textContent=`© ${new Date().getFullYear()} ${D.name} · ${D.location}`;
+$("fname").textContent=D.name;
+$("fsum").textContent=`${D.role} · ${D.education[0].degree.replace(/^MSc, /,"MSc ")}, ${D.education[0].school}. ${D.status}.`;
+const ext=(h,t,l)=>`<a href="${esc(h)}" target="_blank" rel="noopener" aria-label="${esc(l)} (opens in a new tab)">${esc(t)}</a>`;
+$("fcontact").innerHTML=[`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>`,ext(D.links.linkedin,"LinkedIn","LinkedIn profile"),ext(D.links.github,"GitHub","GitHub profile"),...(D.cvUrl?[`<a href="${esc(D.cvUrl)}" download>Download CV (PDF)</a>`]:[])].map(x=>`<li>${x}</li>`).join("");
+$("cdetails").innerHTML=[["Location",esc(D.location)],["Email",`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>`],["Languages",esc(D.spoken.join(", "))]].map(([k,v])=>`<li><b>${k}:</b> ${v}</li>`).join("");
 
 /* ---------- interactions ---------- */
 function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("show"),1800)}
@@ -705,7 +737,7 @@ const cmds=[
  {i:"?",t:"Open Profile Q&A",a:()=>openChat()},
  ...(D.cvUrl?[{i:"↓",t:"Download CV",k:"pdf",a:()=>{const a=document.createElement("a");a.href=D.cvUrl;a.download="";a.click()}}]:[]),{i:"@",t:"Copy email address",k:"copy",a:copyEmail},
  {i:"in",t:"Open LinkedIn",k:"link",a:()=>open(D.links.linkedin,"_blank")},{i:"gh",t:"Open GitHub",k:"link",a:()=>open(D.links.github,"_blank")},
- ...D.projects.filter(p=>p.link).map(p=>({i:"⌁",t:"Project: "+p.name,k:"code",a:()=>open(p.link,"_blank")})),
+ ...D.projects.filter(p=>p.link).map(p=>({i:"⌁",t:"Project: "+(p.short||p.name),k:"code",a:()=>open(p.link,"_blank")})),
  {i:"◐",t:"Toggle light / dark",a:toggleTheme}
 ];
 let kSel=0,kItems=cmds;
@@ -736,7 +768,8 @@ const mailLink=`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>
 function answer(q){
   const s=q.toLowerCase();
   const has=(...w)=>w.some(x=>s.includes(x));
-  const proj=D.projects.find(p=>s.includes(p.name.toLowerCase())||p.name.toLowerCase().split(/[\s-]+/).some(w=>w.length>4&&s.includes(w)));
+  const stop=new Set(["portfolio","personal","website","secure","static","deployment","prediction","management","system","image","project"]);
+  const proj=D.projects.find(p=>s.includes(p.name.toLowerCase())||(p.keywords||[]).some(k=>new RegExp("\\b"+k.replace(/[.*+?^${}()|[\]\\/]/g,"\\$&")+"\\b").test(s))||p.name.toLowerCase().split(/[\s—-]+/).some(w=>w.length>4&&!stop.has(w)&&s.includes(w)));
   if(proj&&!has("all project","projects"))return `<b>${esc(proj.name)}</b> (${esc(proj.tag)}) — ${esc(proj.summary)}${proj.result?"\n\nResult: "+esc(proj.result):""}${proj.notes?"\n\nNote: "+proj.notes.map(esc).join(" "):""}\n\nStack: ${esc(proj.stack.join(", "))}${proj.link?`\n<a href="${esc(proj.link)}" target="_blank" rel="noopener">View the code ↗</a>`:""}`;
   if(/^\s*(hi|hello|hey|bonjour|salut)\b/.test(s))return `Hi! I can tell you about ${esc(D.first)}'s experience, projects, skills, certifications or availability. What would you like to know?`;
   if(has("cv","resume","résumé","curriculum"))return D.cvUrl?`You can download ${esc(D.first)}'s CV here: <a href="${esc(D.cvUrl)}" download>Download CV</a>`:`A CV download isn't on this page yet. Email ${esc(D.first)} at ${mailLink} to request it.`;
@@ -746,7 +779,7 @@ function answer(q){
   if(has("educat","study","studies","degree","master","msc","dsti","university","college","bachelor","school"))return D.education.map(e=>`• ${esc(e.degree)} — ${esc(e.school)}, ${esc(e.where)} (${esc(e.dates)})`).join("\n");
   if(has("french","english","language","speak","telugu","tamil"))return `${esc(D.first)} speaks ${esc(listJoin(D.spoken))}.`;
   if(has("experience","work","telyport","rubixe","shiash","company","career","years","role"))return D.experience.map(j=>`<b>${esc(j.title)} @ ${esc(j.org)}</b> (${esc(j.dates)})\n• ${j.points.slice(0,3).map(esc).join("\n• ")}`).join("\n\n");
-  if(has("project","built","portfolio","github","code","build"))return "Projects:\n"+D.projects.map(p=>`• <b>${esc(p.name)}</b> — ${esc(p.tag)}`).join("\n")+"\n\nAsk me about any of them by name.";
+  if(has("project","built","portfolio","github","code","build"))return "Projects:\n"+D.projects.map(p=>`• <b>${esc(p.short||p.name)}</b> — ${esc(p.tag)}`).join("\n")+"\n\nAsk me about any of them by name.";
   const sk=Object.entries(D.skills).find(([k,v])=>v.some(x=>s.includes(x.toLowerCase().split(" ")[0])));
   if(sk&&!has("skill","stack","tech","tools"))return `Yes — ${esc(sk[1].find(x=>s.includes(x.toLowerCase().split(" ")[0])))} is part of his toolkit (${esc(sk[0])}). See the Experience and Projects sections for where he used it.`;
   if(has("skill","stack","tech","tool","python","sql","ml","machine learning","cloud","aws"))return Object.entries(D.skills).map(([k,v])=>`<b>${esc(k)}</b>: ${esc(v.join(", "))}`).join("\n");
