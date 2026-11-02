@@ -1,0 +1,108 @@
+# Deploys the static portfolio to the private S3 bucket behind CloudFront.
+# Manual only (workflow_dispatch) until the AWS setup is approved and verified.
+# Authentication: GitHub OIDC -> short-lived credentials for one IAM role.
+# No AWS access keys are stored anywhere.
+#
+# Required repository VARIABLES (Settings > Secrets and variables > Actions > Variables),
+# all taken from the CloudFormation stack outputs. None of them are secrets:
+#   AWS_ROLE_ARN, AWS_REGION, S3_BUCKET, CLOUDFRONT_DISTRIBUTION_ID, CLOUDFRONT_DOMAIN
+name: Deploy to AWS (S3 + CloudFront)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Website checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check site files and links
+        run: python3 cloud/aws/check_site.py
+
+  deploy:
+    name: Upload and invalidate
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write   # needed to request the OIDC token
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      CLOUDFRONT_DOMAIN: ${{ vars.CLOUDFRONT_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check repository variables are set
+        env:
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+        run: |
+          missing=0
+          for v in AWS_ROLE_ARN AWS_REGION S3_BUCKET CLOUDFRONT_DISTRIBUTION_ID CLOUDFRONT_DOMAIN; do
+            if [ -z "${!v}" ]; then echo "::error::Repository variable $v is not set"; missing=1; fi
+          done
+          exit "$missing"
+
+      - name: Get short-lived AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: portfolio-deploy-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build upload folder (website files only)
+        run: |
+          mkdir -p dist
+          cp index.html 404.html dist/
+          if [ -f cv.pdf ]; then cp cv.pdf dist/; fi
+          ls -la dist
+
+      - name: Upload to S3
+        run: |
+          # HTML: short cache so updates show within minutes.
+          aws s3 cp dist/ "s3://$S3_BUCKET/" --recursive --exclude "*" --include "*.html" \
+            --cache-control "public, max-age=300" --content-type "text/html; charset=utf-8"
+          # Other files (e.g. cv.pdf): cache for one hour.
+          aws s3 cp dist/ "s3://$S3_BUCKET/" --recursive --exclude "*.html" \
+            --cache-control "public, max-age=3600"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          id=$(aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+                 --paths "/*" --query 'Invalidation.Id' --output text)
+          echo "Invalidation $id created"
+          aws cloudfront wait invalidation-completed --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --id "$id"
+
+      - name: Verify the site and the bucket privacy
+        run: |
+          url="https://$CLOUDFRONT_DOMAIN/"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+          echo "CloudFront $url -> HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::CloudFront did not return 200"; exit 1; }
+          http=$(curl -s -o /dev/null -w '%{http_code}' "http://$CLOUDFRONT_DOMAIN/")
+          echo "HTTP request -> $http (expected 301 redirect to HTTPS)"
+          direct=$(curl -s -o /dev/null -w '%{http_code}' "https://$S3_BUCKET.s3.$AWS_REGION.amazonaws.com/index.html")
+          echo "Direct S3 request -> HTTP $direct (expected 403: bucket is private)"
+          [ "$direct" = "403" ] || { echo "::error::S3 bucket answered directly - check Block Public Access"; exit 1; }
+
+      - name: Report URL
+        run: |
+          {
+            echo "### Portfolio deployed to AWS"
+            echo ""
+            echo "CloudFront URL: https://$CLOUDFRONT_DOMAIN/"
+            echo ""
+            echo "Commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "CloudFront URL: https://$CLOUDFRONT_DOMAIN/"
