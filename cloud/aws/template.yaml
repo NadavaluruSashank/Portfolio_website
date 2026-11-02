@@ -1,0 +1,223 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Secure static hosting for the Nadavaluru Sashank portfolio: private S3 bucket,
+  CloudFront with Origin Access Control (OAC), HTTPS-only, and a least-privilege
+  IAM role that GitHub Actions can assume through OpenID Connect (OIDC).
+  No custom domain, no EC2, no RDS.
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Default: NadavaluruSashank
+    Description: GitHub user or organisation that owns the repository.
+  GitHubRepo:
+    Type: String
+    Default: Portfolio_website
+    Description: Repository allowed to deploy.
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: Only workflow runs on this branch can assume the deploy role.
+  ExistingGitHubOIDCProviderArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Leave empty to create the GitHub OIDC provider. If your account already has
+      one for token.actions.githubusercontent.com (only one is allowed per account),
+      paste its ARN here instead.
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: PriceClass_100 = North America + Europe edge locations (cheapest).
+
+Conditions:
+  CreateOIDCProvider: !Equals [!Ref ExistingGitHubOIDCProviderArn, ""]
+
+Resources:
+  # ---------------------------------------------------------------- S3 (private)
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain          # never delete website files with the stack
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced   # ACLs disabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled             # lets you roll back a bad upload
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-versions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+      Tags:
+        - Key: project
+          Value: portfolio
+
+  # ------------------------------------------------------- CloudFront + OAC
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        Description: CloudFront signs every request to the private bucket (SigV4).
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub "Portfolio (${GitHubOwner}/${GitHubRepo})"
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: !Ref PriceClass
+        DefaultRootObject: index.html
+        Origins:
+          - Id: s3-site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""     # empty: OAC is used instead of legacy OAI
+        DefaultCacheBehavior:
+          TargetOriginId: s3-site
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # AWS managed "CachingOptimized": honours the Cache-Control header the
+          # deploy workflow sets on each file (short for HTML, longer for the CV).
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          # AWS managed "SecurityHeadersPolicy": HSTS, X-Content-Type-Options,
+          # X-Frame-Options, Referrer-Policy, X-XSS-Protection.
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+        CustomErrorResponses:
+          # With OAC and no s3:ListBucket for CloudFront, a missing file returns 403.
+          - ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true   # HTTPS on *.cloudfront.net, no domain needed
+      Tags:
+        - Key: project
+          Value: portfolio
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontReadViaOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt SiteBucket.Arn
+              - !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  # ------------------------------------------- GitHub Actions OIDC deploy role
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Assumed by GitHub Actions (OIDC) to upload the portfolio and invalidate CloudFront.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !Ref GitHubOIDCProvider
+                - !Ref ExistingGitHubOIDCProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOwner}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+      Policies:
+        - PolicyName: portfolio-deploy-least-privilege
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ListSiteBucket
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt SiteBucket.Arn
+              - Sid: UploadSiteFiles
+                Effect: Allow
+                Action: s3:PutObject          # no Delete: deploys never remove files
+                Resource: !Sub "${SiteBucket.Arn}/*"
+              - Sid: InvalidateThisDistributionOnly
+                Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetInvalidation
+                Resource: !Sub "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+      Tags:
+        - Key: project
+          Value: portfolio
+
+Outputs:
+  BucketName:
+    Description: Private S3 bucket that stores the site files (GitHub variable S3_BUCKET).
+    Value: !Ref SiteBucket
+  BucketRegion:
+    Description: Region of the bucket and stack (GitHub variable AWS_REGION).
+    Value: !Ref AWS::Region
+  DistributionId:
+    Description: CloudFront distribution ID (GitHub variable CLOUDFRONT_DISTRIBUTION_ID).
+    Value: !Ref Distribution
+  DistributionDomainName:
+    Description: Default CloudFront domain (GitHub variable CLOUDFRONT_DOMAIN).
+    Value: !GetAtt Distribution.DomainName
+  SiteURL:
+    Description: HTTPS URL of the AWS-hosted portfolio.
+    Value: !Sub "https://${Distribution.DomainName}/"
+  DeployRoleArn:
+    Description: IAM role for GitHub Actions (GitHub variable AWS_ROLE_ARN).
+    Value: !GetAtt GitHubDeployRole.Arn
