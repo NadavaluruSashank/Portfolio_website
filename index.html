@@ -71,7 +71,7 @@ const DATA = {
 
   // CV download: upload your approved CV PDF to this repo (e.g. as cv.pdf),
   // then set cvUrl: "cv.pdf". While it is empty, no Download CV button is shown.
-  cvUrl: "",
+  cvUrl: "cv.pdf",
 
   links: {
     email: "sashankreddy2505@gmail.com",
@@ -613,7 +613,7 @@ $("availText").textContent="Looking for data science, machine learning or data a
 $("loc").textContent=`· ${D.location}`;
 $("tagline").textContent=D.tagline;
 ic.mail=ic.mail.replace("<svg ",'<svg aria-hidden="true" ');ic.li=ic.li.replace("<svg ",'<svg aria-hidden="true" ');ic.gh=ic.gh.replace("<svg ",'<svg aria-hidden="true" ');
-const cvBtn=D.cvUrl?`<a class="btn magnetic" href="${esc(D.cvUrl)}" download>${ic.dl}Download CV</a>`:"";
+const cvBtn=D.cvUrl?`<a class="btn magnetic" href="${esc(D.cvUrl)}" download="Nadavaluru_Sashank_CV.pdf">${ic.dl}Download CV</a>`:"";
 const ctaHTML=`<a class="btn primary magnetic" href="mailto:${esc(D.links.email)}" aria-label="Email ${esc(D.first)} at ${esc(D.links.email)}">${ic.mail}Get in touch</a>${cvBtn}
 <a class="btn magnetic" href="${esc(D.links.linkedin)}" target="_blank" rel="noopener" aria-label="LinkedIn profile (opens in a new tab)">${ic.li}LinkedIn</a>
 <a class="btn magnetic" href="${esc(D.links.github)}" target="_blank" rel="noopener" aria-label="GitHub profile (opens in a new tab)">${ic.gh}GitHub</a>`;
@@ -677,7 +677,7 @@ $("foot").textContent=`© ${new Date().getFullYear()} ${D.name} · ${D.location}
 $("fname").textContent=D.name;
 $("fsum").textContent=`${D.role} · ${D.education[0].degree.replace(/^MSc, /,"MSc ")}, ${D.education[0].school}. ${D.status}.`;
 const ext=(h,t,l)=>`<a href="${esc(h)}" target="_blank" rel="noopener" aria-label="${esc(l)} (opens in a new tab)">${esc(t)}</a>`;
-$("fcontact").innerHTML=[`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>`,ext(D.links.linkedin,"LinkedIn","LinkedIn profile"),ext(D.links.github,"GitHub","GitHub profile"),...(D.cvUrl?[`<a href="${esc(D.cvUrl)}" download>Download CV (PDF)</a>`]:[])].map(x=>`<li>${x}</li>`).join("");
+$("fcontact").innerHTML=[`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>`,ext(D.links.linkedin,"LinkedIn","LinkedIn profile"),ext(D.links.github,"GitHub","GitHub profile"),...(D.cvUrl?[`<a href="${esc(D.cvUrl)}" download="Nadavaluru_Sashank_CV.pdf">Download CV (PDF)</a>`]:[])].map(x=>`<li>${x}</li>`).join("");
 $("cdetails").innerHTML=[["Location",esc(D.location)],["Email",`<a href="mailto:${esc(D.links.email)}">${esc(D.links.email)}</a>`],["Languages",esc(D.spoken.join(", "))]].map(([k,v])=>`<li><b>${k}:</b> ${v}</li>`).join("");
 
 /* ---------- interactions ---------- */
@@ -735,7 +735,7 @@ const cmds=[
  {i:"↳",t:"Go to About",a:()=>go("#about")},{i:"↳",t:"Go to Experience",a:()=>go("#experience")},{i:"↳",t:"Go to Projects",a:()=>go("#projects")},
  {i:"↳",t:"Go to Credentials",a:()=>go("#credentials")},{i:"↳",t:"Go to Skills",a:()=>go("#skills")},{i:"↳",t:"Go to Contact",a:()=>go("#contact")},
  {i:"?",t:"Open Profile Q&A",a:()=>openChat()},
- ...(D.cvUrl?[{i:"↓",t:"Download CV",k:"pdf",a:()=>{const a=document.createElement("a");a.href=D.cvUrl;a.download="";a.click()}}]:[]),{i:"@",t:"Copy email address",k:"copy",a:copyEmail},
+ ...(D.cvUrl?[{i:"↓",t:"Download CV",k:"pdf",a:()=>{const a=document.createElement("a");a.href=D.cvUrl;a.download="Nadavaluru_Sashank_CV.pdf";a.click()}}]:[]),{i:"@",t:"Copy email address",k:"copy",a:copyEmail},
  {i:"in",t:"Open LinkedIn",k:"link",a:()=>open(D.links.linkedin,"_blank")},{i:"gh",t:"Open GitHub",k:"link",a:()=>open(D.links.github,"_blank")},
  ...D.projects.filter(p=>p.link).map(p=>({i:"⌁",t:"Project: "+(p.short||p.name),k:"code",a:()=>open(p.link,"_blank")})),
  {i:"◐",t:"Toggle light / dark",a:toggleTheme}
@@ -772,7 +772,7 @@ function answer(q){
   const proj=D.projects.find(p=>s.includes(p.name.toLowerCase())||(p.keywords||[]).some(k=>new RegExp("\\b"+k.replace(/[.*+?^${}()|[\]\\/]/g,"\\$&")+"\\b").test(s))||p.name.toLowerCase().split(/[\s—-]+/).some(w=>w.length>4&&!stop.has(w)&&s.includes(w)));
   if(proj&&!has("all project","projects"))return `<b>${esc(proj.name)}</b> (${esc(proj.tag)}) — ${esc(proj.summary)}${proj.result?"\n\nResult: "+esc(proj.result):""}${proj.notes?"\n\nNote: "+proj.notes.map(esc).join(" "):""}\n\nStack: ${esc(proj.stack.join(", "))}${proj.link?`\n<a href="${esc(proj.link)}" target="_blank" rel="noopener">View the code ↗</a>`:""}`;
   if(/^\s*(hi|hello|hey|bonjour|salut)\b/.test(s))return `Hi! I can tell you about ${esc(D.first)}'s experience, projects, skills, certifications or availability. What would you like to know?`;
-  if(has("cv","resume","résumé","curriculum"))return D.cvUrl?`You can download ${esc(D.first)}'s CV here: <a href="${esc(D.cvUrl)}" download>Download CV</a>`:`A CV download isn't on this page yet. Email ${esc(D.first)} at ${mailLink} to request it.`;
+  if(has("cv","resume","résumé","curriculum"))return D.cvUrl?`You can download ${esc(D.first)}'s CV here: <a href="${esc(D.cvUrl)}" download="Nadavaluru_Sashank_CV.pdf">Download CV</a>`:`A CV download isn't on this page yet. Email ${esc(D.first)} at ${mailLink} to request it.`;
   if(has("contact","email","reach","hire","phone","call","linkedin","message"))return `Best way to reach ${esc(D.first)} is email: ${mailLink}\nOr on <a href="${esc(D.links.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>.`;
   if(has("avail","intern","alternance","start","when","open to","looking","notice","relocat","remote","visa","job"))return `Availability, in his words: "${esc(D.availability)}"\n\nRoles: data science, machine learning or data analyst. He is based in ${esc(D.location)}. Contact: ${mailLink}.`;
   if(has("cert","nasscom","neo4j","iabac","credential"))return "Certifications:\n"+D.certifications.map(c=>`• ${esc(c.name)} — ${esc(c.issuer)}${c.date?" ("+esc(c.date)+")":""}`).join("\n");
